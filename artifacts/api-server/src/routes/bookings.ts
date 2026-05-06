@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db, bookingsTable } from "@workspace/db";
 import {
   CreateBookingBody,
@@ -9,8 +9,41 @@ import {
   DeleteBookingParams,
   ListBookingsQueryParams,
 } from "@workspace/api-zod";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
+
+async function sendWhatsAppNotification(booking: typeof bookingsTable.$inferSelect) {
+  const phone = process.env.WHATSAPP_NUMBER;
+  const apiKey = process.env.TEXTMEBOT_API_KEY;
+
+  if (!phone || !apiKey) return;
+
+  const message = [
+    "New Booking Received!",
+    `Name: ${booking.name}`,
+    `Phone: ${booking.phone}`,
+    `Date: ${booking.date} | ${booking.time}`,
+    `Guests: ${booking.guests}`,
+    `Meal: ${booking.mealType}`,
+    booking.specialRequests ? `Notes: ${booking.specialRequests}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const url = `https://api.textmebot.com/send.php?recipient=${encodeURIComponent(phone)}&apikey=${encodeURIComponent(apiKey)}&text=${encodeURIComponent(message)}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      logger.warn({ status: res.status }, "TextMeBot notification failed");
+    } else {
+      logger.info({ bookingId: booking.id }, "WhatsApp notification sent");
+    }
+  } catch (err) {
+    logger.warn({ err }, "WhatsApp notification error");
+  }
+}
 
 function formatBooking(b: typeof bookingsTable.$inferSelect) {
   return {
@@ -69,6 +102,9 @@ router.post("/bookings", async (req, res) => {
     .returning();
 
   res.status(201).json(formatBooking(booking));
+
+  // Fire-and-forget — don't await so the response isn't delayed
+  sendWhatsAppNotification(booking).catch(() => {});
 });
 
 router.get("/bookings/stats", async (_req, res) => {
