@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Home Kitchen – Food Booking"
+version = "1.0.0"
+id = "artifacts/food-booking"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23719
+
+[services.development]
+run = "pnpm --filter @workspace/food-booking run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/food-booking", "run", "build" ]
+publicDir = "artifacts/food-booking/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23719"
+BASE_PATH = "/"

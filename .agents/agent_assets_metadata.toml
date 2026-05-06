@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "HDQaMwyR1c29hGlcchFL_"
+uri = "file://artifacts/food-booking/public/hero.png"
+type = "image"
+title = "Cozy home cooked rustic meal"

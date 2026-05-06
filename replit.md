@@ -1,10 +1,11 @@
-# [Project name]
+# Home Kitchen – Food Booking
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A warm, cozy food booking app for a home kitchen where customers reserve meal slots and the host manages bookings from an admin dashboard.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server
+- `pnpm --filter @workspace/food-booking run dev` — run the frontend (port assigned by env)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
@@ -14,6 +15,7 @@ _Replace the heading above with the project's name, and this line with one sente
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
+- Frontend: React + Vite, Tailwind CSS, shadcn/ui, TanStack Query, Wouter
 - API: Express 5
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
@@ -22,23 +24,36 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `lib/api-spec/openapi.yaml` — OpenAPI spec (source of truth for all API contracts)
+- `lib/db/src/schema/bookings.ts` — Drizzle DB schema for bookings
+- `artifacts/api-server/src/routes/bookings.ts` — Booking CRUD routes
+- `artifacts/food-booking/src/pages/` — Frontend pages (Home booking form, Admin dashboard)
+- `lib/api-client-react/src/generated/` — Generated React Query hooks (do not edit)
+- `lib/api-zod/src/generated/` — Generated Zod schemas (do not edit)
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- OpenAPI-first: all API contracts are defined in `lib/api-spec/openapi.yaml`, codegen produces React Query hooks and Zod validators
+- `lib/api-zod/src/index.ts` exports selectively to avoid name collisions between `generated/api.ts` and `generated/types/` (both define body schema names)
+- Bookings are stored with `date` as a plain text field (ISO date string) for simplicity — avoids timezone issues in queries
+- Stats endpoint computes counts in-memory from a full table scan (small dataset expected)
+- Admin route at `/admin` uses no auth (intended for the kitchen owner on their own device)
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Customer booking form: name, phone, email, date, time slot, guest count, meal type, special requests
+- Booking confirmation screen shown after submission
+- Admin dashboard: live stats (today's tables, pending, confirmed, completed, cancelled), filterable bookings table, status management (Confirm / Complete / Cancel), delete with confirmation dialog, guest search
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Warm, food-inspired color palette (terracotta, burgundy, cream)
+- No emojis in the UI
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- After changing `lib/api-spec/openapi.yaml`, always run codegen before updating routes or frontend
+- `lib/api-zod/src/index.ts` must not use `export * from "./generated/types"` wholesale — selectively re-export to avoid duplicates with `generated/api.ts`
 
 ## Pointers
 
