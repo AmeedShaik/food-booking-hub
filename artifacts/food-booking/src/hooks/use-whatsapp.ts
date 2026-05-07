@@ -16,7 +16,11 @@ export function useWhatsAppNumber() {
 }
 
 export function whatsAppLink(phone: string, message?: string) {
-  const digits = phone.replace(/\D/g, "");
+  let digits = phone.replace(/\D/g, "");
+  // Auto-prepend India country code (+91) if the number is 10 digits
+  if (digits.length === 10) {
+    digits = "91" + digits;
+  }
   const base = `https://wa.me/${digits}`;
   return message ? `${base}?text=${encodeURIComponent(message)}` : base;
 }

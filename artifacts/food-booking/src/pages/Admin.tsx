@@ -14,7 +14,10 @@ import {
   Users,
   Search,
   ArrowLeft,
-  MessageCircle
+  MessageCircle,
+  Copy,
+  CheckCheck,
+  Link2
 } from "lucide-react";
 import { whatsAppLink } from "@/hooks/use-whatsapp";
 
@@ -82,12 +85,28 @@ const getStatusBadgeVariant = (status: string) => {
   }
 };
 
+function useCopyLink() {
+  const [copied, setCopied] = useState<string | null>(null);
+  const copy = (text: string, key: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  };
+  return { copied, copy };
+}
+
 export default function Admin() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
-  
+  const { copied, copy } = useCopyLink();
+
+  const origin = window.location.origin;
+  const customerLink = origin + "/";
+  const adminLink = origin + "/admin";
+
   // For Delete Dialog
   const [bookingToDelete, setBookingToDelete] = useState<number | null>(null);
 
@@ -169,7 +188,46 @@ export default function Admin() {
       </header>
 
       <main className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
-        
+
+        {/* Shareable Links */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Customer Link */}
+          <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Link2 className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Customer Booking Link</p>
+              <p className="text-sm font-medium text-foreground truncate">{customerLink}</p>
+            </div>
+            <button
+              onClick={() => copy(customerLink, "customer")}
+              className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            >
+              {copied === "customer" ? <CheckCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied === "customer" ? "Copied!" : "Copy"}
+            </button>
+          </div>
+
+          {/* Admin Link */}
+          <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
+              <ChefHat className="w-5 h-5 text-secondary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Admin Panel Link</p>
+              <p className="text-sm font-medium text-foreground truncate">{adminLink}</p>
+            </div>
+            <button
+              onClick={() => copy(adminLink, "admin")}
+              className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-secondary/10 text-secondary hover:bg-secondary/20 transition-colors"
+            >
+              {copied === "admin" ? <CheckCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied === "admin" ? "Copied!" : "Copy"}
+            </button>
+          </div>
+        </div>
+
         {/* Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <StatCard title="Today's Tables" value={stats?.todayCount} icon={<CalendarDays className="w-4 h-4 text-primary" />} isLoading={isLoadingStats} />
