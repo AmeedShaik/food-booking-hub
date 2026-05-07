@@ -109,7 +109,7 @@ export default function Admin() {
 
   const origin = window.location.origin;
   const customerLink = origin + "/";
-  const adminLink = origin + "/admin";
+  const adminLink = origin + "/kitchen-dash";
 
   // For Delete Dialog
   const [bookingToDelete, setBookingToDelete] = useState<number | null>(null);
@@ -362,7 +362,7 @@ export default function Admin() {
                             className="inline-flex items-center gap-1.5 text-sm font-medium text-[#25D366] hover:underline w-fit"
                           >
                             <MessageCircle className="w-3.5 h-3.5" />
-                            {booking.phone}
+                            +91 {booking.phone}
                           </a>
                           <a href={`mailto:${booking.email}`} className="text-xs text-muted-foreground hover:underline w-fit">
                             {booking.email}

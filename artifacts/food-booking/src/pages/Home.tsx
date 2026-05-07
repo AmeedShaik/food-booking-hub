@@ -127,7 +127,7 @@ export default function Home() {
               Chat with us
             </a>
           )}
-          <Link href="/admin" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/kitchen-dash" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Admin Portal
           </Link>
         </div>
@@ -224,7 +224,21 @@ export default function Home() {
                           <FormItem>
                             <FormLabel className="text-foreground/80">Phone Number</FormLabel>
                             <FormControl>
-                              <Input placeholder="(555) 123-4567" className="h-12 bg-white" {...field} />
+                              <div className="flex h-12">
+                                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-sm text-muted-foreground font-medium select-none">
+                                  +91
+                                </span>
+                                <Input
+                                  placeholder="98765 43210"
+                                  className="h-12 bg-white rounded-l-none flex-1"
+                                  {...field}
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                                    field.onChange(val);
+                                  }}
+                                  maxLength={10}
+                                />
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>

@@ -228,7 +228,7 @@ export default function CalendarView({ bookings }: { bookings: Booking[] }) {
                           className="flex items-center gap-1 text-[#25D366] font-semibold hover:underline"
                         >
                           <MessageCircle className="w-3 h-3" />
-                          {b.phone}
+                          +91 {b.phone}
                         </a>
                       </div>
                       {b.specialRequests && (
