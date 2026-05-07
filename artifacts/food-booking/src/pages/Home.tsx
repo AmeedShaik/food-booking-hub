@@ -127,9 +127,6 @@ export default function Home() {
               Chat with us
             </a>
           )}
-          <Link href="/kitchen-dash" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Admin Portal
-          </Link>
         </div>
       </header>
 
