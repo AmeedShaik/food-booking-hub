@@ -11,8 +11,43 @@ import {
   isSameMonth,
   isToday,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, MessageCircle, UtensilsCrossed, Printer } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, UtensilsCrossed, Printer, Send } from "lucide-react";
 import { whatsAppLink } from "@/hooks/use-whatsapp";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+
+type Booking = {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  date: string;
+  time: string;
+  guests: number;
+  mealType: string;
+  specialRequests?: string | null;
+  status: "Pending" | "Confirmed" | "Cancelled" | "Completed";
+  bookedAt: string;
+};
+
+const STATUS_COLORS: Record<string, { dot: string; badge: string; label: string }> = {
+  Pending:   { dot: "bg-amber-400",   badge: "bg-amber-50 text-amber-700 border-amber-200",   label: "Pending" },
+  Confirmed: { dot: "bg-green-500",   badge: "bg-green-50 text-green-700 border-green-200",   label: "Confirmed" },
+  Completed: { dot: "bg-blue-500",    badge: "bg-blue-50 text-blue-700 border-blue-200",       label: "Completed" },
+  Cancelled: { dot: "bg-red-400",     badge: "bg-red-50 text-red-600 border-red-200",          label: "Cancelled" },
+};
+
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const DEFAULT_MESSAGE = (name: string, date: string, time: string) =>
+  `Hi ${name}, just a reminder about your reservation at Home Kitchen on ${date} at ${time}. We look forward to welcoming you!`;
 
 function printDayBookings(dateLabel: string, bookings: Booking[]) {
   const sorted = [...bookings].sort((a, b) => {
@@ -84,34 +119,133 @@ function printDayBookings(dateLabel: string, bookings: Booking[]) {
   }
 }
 
-type Booking = {
-  id: number;
-  name: string;
-  phone: string;
-  email: string;
-  date: string;
-  time: string;
-  guests: number;
-  mealType: string;
-  specialRequests?: string | null;
-  status: "Pending" | "Confirmed" | "Cancelled" | "Completed";
-  bookedAt: string;
-};
+function BroadcastDialog({
+  open,
+  onClose,
+  dateLabel,
+  guests,
+}: {
+  open: boolean;
+  onClose: () => void;
+  dateLabel: string;
+  guests: Booking[];
+}) {
+  const [messageTemplate, setMessageTemplate] = useState(
+    "Hi {name}, just a reminder about your reservation at Home Kitchen on {date} at {time}. We look forward to welcoming you!"
+  );
+  const [opened, setOpened] = useState<Set<number>>(new Set());
 
-const STATUS_COLORS: Record<string, { dot: string; badge: string; label: string }> = {
-  Pending:   { dot: "bg-amber-400",   badge: "bg-amber-50 text-amber-700 border-amber-200",   label: "Pending" },
-  Confirmed: { dot: "bg-green-500",   badge: "bg-green-50 text-green-700 border-green-200",   label: "Confirmed" },
-  Completed: { dot: "bg-blue-500",    badge: "bg-blue-50 text-blue-700 border-blue-200",       label: "Completed" },
-  Cancelled: { dot: "bg-red-400",     badge: "bg-red-50 text-red-600 border-red-200",          label: "Cancelled" },
-};
+  function resolveMessage(b: Booking) {
+    const dateFormatted = format(new Date(b.date + "T12:00:00"), "MMMM d, yyyy");
+    return messageTemplate
+      .replace(/{name}/g, b.name)
+      .replace(/{date}/g, dateFormatted)
+      .replace(/{time}/g, b.time);
+  }
 
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  function openOne(b: Booking) {
+    window.open(whatsAppLink(b.phone, resolveMessage(b)), "_blank");
+    setOpened((prev) => new Set(prev).add(b.id));
+  }
+
+  function openAll() {
+    guests.forEach((b, i) => {
+      setTimeout(() => {
+        window.open(whatsAppLink(b.phone, resolveMessage(b)), "_blank");
+        setOpened((prev) => new Set(prev).add(b.id));
+      }, i * 600);
+    });
+  }
+
+  function handleClose() {
+    setOpened(new Set());
+    onClose();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-serif text-secondary">
+            Send Reminders — {dateLabel}
+          </DialogTitle>
+          <DialogDescription>
+            {guests.length} confirmed guest{guests.length > 1 ? "s" : ""}. Customise the message then send individually or all at once.
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Message template */}
+        <div className="space-y-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Message template
+          </p>
+          <Textarea
+            value={messageTemplate}
+            onChange={(e) => setMessageTemplate(e.target.value)}
+            rows={3}
+            className="text-sm resize-none"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Use <code className="bg-muted px-1 rounded">{"{name}"}</code>,{" "}
+            <code className="bg-muted px-1 rounded">{"{date}"}</code>,{" "}
+            <code className="bg-muted px-1 rounded">{"{time}"}</code> as placeholders.
+          </p>
+        </div>
+
+        {/* Guest list */}
+        <div className="divide-y divide-border border border-border rounded-lg overflow-hidden max-h-60 overflow-y-auto">
+          {guests.map((b) => (
+            <div key={b.id} className="flex items-center justify-between gap-3 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">{b.name}</p>
+                <p className="text-xs text-muted-foreground">{b.time} · +91 {b.phone}</p>
+              </div>
+              <button
+                onClick={() => openOne(b)}
+                className={[
+                  "shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+                  opened.has(b.id)
+                    ? "bg-green-100 text-green-700 border border-green-200"
+                    : "bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20",
+                ].join(" ")}
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                {opened.has(b.id) ? "Sent" : "Send"}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-1">
+          <p className="text-xs text-muted-foreground">
+            {opened.size} of {guests.length} sent
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleClose}>
+              Done
+            </Button>
+            <Button
+              size="sm"
+              onClick={openAll}
+              className="bg-[#25D366] hover:bg-[#20bd5a] text-white gap-1.5"
+            >
+              <Send className="w-3.5 h-3.5" />
+              Send All
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function CalendarView({ bookings }: { bookings: Booking[] }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(
     format(new Date(), "yyyy-MM-dd")
   );
+  const [showBroadcast, setShowBroadcast] = useState(false);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -119,7 +253,6 @@ export default function CalendarView({ bookings }: { bookings: Booking[] }) {
   const calEnd = endOfWeek(monthEnd);
   const days = eachDayOfInterval({ start: calStart, end: calEnd });
 
-  // Group bookings by date string
   const byDate: Record<string, Booking[]> = {};
   for (const b of bookings) {
     if (!byDate[b.date]) byDate[b.date] = [];
@@ -127,6 +260,11 @@ export default function CalendarView({ bookings }: { bookings: Booking[] }) {
   }
 
   const selectedBookings = selectedDate ? (byDate[selectedDate] ?? []) : [];
+  const confirmedGuests = selectedBookings.filter((b) => b.status === "Confirmed");
+
+  const dateLabel = selectedDate
+    ? format(new Date(selectedDate + "T12:00:00"), "EEEE, MMMM d, yyyy")
+    : "";
 
   return (
     <div className="flex flex-col lg:flex-row gap-6">
@@ -169,7 +307,6 @@ export default function CalendarView({ bookings }: { bookings: Booking[] }) {
             const today = isToday(day);
             const selected = selectedDate === dateStr;
 
-            // Count by status (only show up to 3 dots)
             const statusCounts = dayBookings.reduce<Record<string, number>>((acc, b) => {
               acc[b.status] = (acc[b.status] ?? 0) + 1;
               return acc;
@@ -260,20 +397,29 @@ export default function CalendarView({ bookings }: { bookings: Booking[] }) {
                   </p>
                 )}
               </div>
+
               {selectedDate && selectedBookings.length > 0 && (
-                <button
-                  onClick={() =>
-                    printDayBookings(
-                      format(new Date(selectedDate + "T12:00:00"), "EEEE, MMMM d, yyyy"),
-                      selectedBookings
-                    )
-                  }
-                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-secondary/10 text-secondary hover:bg-secondary/20 transition-colors mt-1"
-                  title="Print / Save as PDF"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                  Print
-                </button>
+                <div className="flex flex-col gap-1.5 mt-1">
+                  <button
+                    onClick={() => printDayBookings(dateLabel, selectedBookings)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-secondary/10 text-secondary hover:bg-secondary/20 transition-colors"
+                    title="Print / Save as PDF"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    Print
+                  </button>
+
+                  {confirmedGuests.length > 0 && (
+                    <button
+                      onClick={() => setShowBroadcast(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
+                      title="Send WhatsApp reminders to confirmed guests"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      Remind ({confirmedGuests.length})
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -330,6 +476,14 @@ export default function CalendarView({ bookings }: { bookings: Booking[] }) {
           </div>
         </div>
       </div>
+
+      {/* Broadcast Dialog */}
+      <BroadcastDialog
+        open={showBroadcast}
+        onClose={() => setShowBroadcast(false)}
+        dateLabel={format(selectedDate ? new Date(selectedDate + "T12:00:00") : new Date(), "EEEE, MMMM d")}
+        guests={confirmedGuests}
+      />
     </div>
   );
 }
