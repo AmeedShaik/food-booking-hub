@@ -17,9 +17,12 @@ import {
   MessageCircle,
   Copy,
   CheckCheck,
-  Link2
+  Link2,
+  LayoutList,
+  Calendar,
 } from "lucide-react";
 import { whatsAppLink } from "@/hooks/use-whatsapp";
+import CalendarView from "@/components/CalendarView";
 
 import { 
   useListBookings, 
@@ -101,6 +104,7 @@ export default function Admin() {
   const { toast } = useToast();
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [view, setView] = useState<"list" | "calendar">("list");
   const { copied, copy } = useCopyLink();
 
   const origin = window.location.origin;
@@ -246,19 +250,54 @@ export default function Admin() {
               <p className="text-sm text-muted-foreground">View and manage all your table bookings.</p>
             </div>
             
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search guests..." 
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 bg-background"
-                />
+            <div className="flex items-center gap-3">
+              {/* View toggle */}
+              <div className="flex items-center bg-muted rounded-lg p-1 gap-1">
+                <button
+                  onClick={() => setView("list")}
+                  className={[
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all",
+                    view === "list" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                  ].join(" ")}
+                >
+                  <LayoutList className="w-3.5 h-3.5" />
+                  List
+                </button>
+                <button
+                  onClick={() => setView("calendar")}
+                  className={[
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all",
+                    view === "calendar" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                  ].join(" ")}
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  Calendar
+                </button>
               </div>
+
+              {view === "list" && (
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Search guests..." 
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9 bg-background"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
+          {/* Calendar View */}
+          {view === "calendar" && (
+            <div className="p-6">
+              <CalendarView bookings={bookings ?? []} />
+            </div>
+          )}
+
+          {/* List View */}
+          {view === "list" && (
           <div className="px-6 pt-4">
             <Tabs defaultValue="all" value={filter} onValueChange={setFilter} className="w-full">
               <TabsList className="mb-4">
@@ -270,8 +309,9 @@ export default function Admin() {
               </TabsList>
             </Tabs>
           </div>
+          )}
 
-          <div className="overflow-x-auto">
+          {view === "list" && <div className="overflow-x-auto">
             <Table>
               <Header>
                 <Row>
@@ -395,7 +435,7 @@ export default function Admin() {
                 )}
               </Body>
             </Table>
-          </div>
+          </div>}
         </div>
       </main>
 
