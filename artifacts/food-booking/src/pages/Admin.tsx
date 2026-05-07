@@ -13,8 +13,10 @@ import {
   CalendarDays,
   Users,
   Search,
-  ArrowLeft
+  ArrowLeft,
+  MessageCircle
 } from "lucide-react";
+import { whatsAppLink } from "@/hooks/use-whatsapp";
 
 import { 
   useListBookings, 
@@ -255,7 +257,13 @@ export default function Admin() {
                       </Cell>
                       <Cell>
                         <div className="flex flex-col space-y-1">
-                          <a href={`tel:${booking.phone}`} className="text-sm hover:underline hover:text-primary transition-colors w-fit">
+                          <a
+                            href={whatsAppLink(booking.phone, `Hi ${booking.name}, your booking on ${booking.date} (${booking.time}) is confirmed. We look forward to seeing you!`)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#25D366] hover:underline w-fit"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
                             {booking.phone}
                           </a>
                           <a href={`mailto:${booking.email}`} className="text-xs text-muted-foreground hover:underline w-fit">
