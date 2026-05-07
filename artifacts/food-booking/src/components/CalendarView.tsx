@@ -11,8 +11,78 @@ import {
   isSameMonth,
   isToday,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, MessageCircle, UtensilsCrossed } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, UtensilsCrossed, Printer } from "lucide-react";
 import { whatsAppLink } from "@/hooks/use-whatsapp";
+
+function printDayBookings(dateLabel: string, bookings: Booking[]) {
+  const sorted = [...bookings].sort((a, b) => {
+    const order = ["Breakfast (8am-11am)", "Lunch (12pm-3pm)", "Dinner (7pm-10pm)"];
+    return order.indexOf(a.time) - order.indexOf(b.time);
+  });
+
+  const rows = sorted.map((b) => `
+    <div class="booking">
+      <div class="booking-header">
+        <div>
+          <div class="guest-name">${b.name}</div>
+          <div class="meta">${b.time}</div>
+        </div>
+        <span class="status status-${b.status.toLowerCase()}">${b.status}</span>
+      </div>
+      <div class="detail-row">
+        <span>${b.guests} guest${b.guests > 1 ? "s" : ""}</span>
+        <span class="dot">·</span>
+        <span>${b.mealType}</span>
+        <span class="dot">·</span>
+        <span>+91 ${b.phone}</span>
+        <span class="dot">·</span>
+        <span>${b.email}</span>
+      </div>
+      ${b.specialRequests ? `<div class="special">"${b.specialRequests}"</div>` : ""}
+    </div>
+  `).join("");
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Bookings – ${dateLabel}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Georgia, serif; color: #1a1a1a; padding: 32px; max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 22px; font-weight: bold; color: #7b2d2d; margin-bottom: 4px; }
+    .subtitle { font-size: 13px; color: #666; margin-bottom: 24px; }
+    .booking { border: 1px solid #e0d6cc; border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+    .booking-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .guest-name { font-size: 16px; font-weight: bold; }
+    .meta { font-size: 12px; color: #666; margin-top: 2px; }
+    .status { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; padding: 3px 8px; border-radius: 999px; border: 1px solid; }
+    .status-pending   { background: #fffbeb; color: #92400e; border-color: #fcd34d; }
+    .status-confirmed { background: #f0fdf4; color: #166534; border-color: #86efac; }
+    .status-completed { background: #eff6ff; color: #1e40af; border-color: #93c5fd; }
+    .status-cancelled { background: #fef2f2; color: #991b1b; border-color: #fca5a5; }
+    .detail-row { font-size: 12px; color: #555; display: flex; flex-wrap: wrap; gap: 4px; }
+    .dot { color: #bbb; }
+    .special { font-size: 12px; color: #c2540a; font-style: italic; margin-top: 6px; }
+    .footer { margin-top: 32px; border-top: 1px solid #e0d6cc; padding-top: 12px; font-size: 11px; color: #999; text-align: center; }
+    @media print { body { padding: 16px; } }
+  </style>
+</head>
+<body>
+  <h1>Reservations — ${dateLabel}</h1>
+  <div class="subtitle">${bookings.length} reservation${bookings.length > 1 ? "s" : ""} · Home Kitchen</div>
+  ${rows}
+  <div class="footer">Printed from Home Kitchen Admin · ${new Date().toLocaleString()}</div>
+  <script>window.onload = () => { window.print(); }<\/script>
+</body>
+</html>`;
+
+  const win = window.open("", "_blank");
+  if (win) {
+    win.document.write(html);
+    win.document.close();
+  }
+}
 
 type Booking = {
   id: number;
@@ -177,16 +247,35 @@ export default function CalendarView({ bookings }: { bookings: Booking[] }) {
       <div className="lg:w-80 shrink-0">
         <div className="bg-card border border-border rounded-xl overflow-hidden h-full">
           <div className="px-5 py-4 border-b border-border bg-accent/30">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {selectedDate ? format(new Date(selectedDate + "T12:00:00"), "EEEE, MMMM d") : "Select a date"}
-            </p>
-            {selectedDate && (
-              <p className="text-2xl font-serif font-bold text-secondary mt-0.5">
-                {selectedBookings.length === 0
-                  ? "No bookings"
-                  : `${selectedBookings.length} reservation${selectedBookings.length > 1 ? "s" : ""}`}
-              </p>
-            )}
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {selectedDate ? format(new Date(selectedDate + "T12:00:00"), "EEEE, MMMM d") : "Select a date"}
+                </p>
+                {selectedDate && (
+                  <p className="text-2xl font-serif font-bold text-secondary mt-0.5">
+                    {selectedBookings.length === 0
+                      ? "No bookings"
+                      : `${selectedBookings.length} reservation${selectedBookings.length > 1 ? "s" : ""}`}
+                  </p>
+                )}
+              </div>
+              {selectedDate && selectedBookings.length > 0 && (
+                <button
+                  onClick={() =>
+                    printDayBookings(
+                      format(new Date(selectedDate + "T12:00:00"), "EEEE, MMMM d, yyyy"),
+                      selectedBookings
+                    )
+                  }
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-secondary/10 text-secondary hover:bg-secondary/20 transition-colors mt-1"
+                  title="Print / Save as PDF"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  Print
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="divide-y divide-border max-h-[480px] overflow-y-auto">
