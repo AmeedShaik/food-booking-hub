@@ -234,10 +234,10 @@ export default function Admin() {
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <StatCard title="Today's Tables" value={stats?.todayCount} icon={<CalendarDays className="w-4 h-4 text-primary" />} isLoading={isLoadingStats} />
+          <StatCard title="Today's Orders" value={stats?.todayCount} icon={<CalendarDays className="w-4 h-4 text-primary" />} isLoading={isLoadingStats} />
           <StatCard title="Pending" value={stats?.pending} icon={<Clock className="w-4 h-4 text-orange-500" />} isLoading={isLoadingStats} />
           <StatCard title="Confirmed" value={stats?.confirmed} icon={<Check className="w-4 h-4 text-green-600" />} isLoading={isLoadingStats} />
-          <StatCard title="Total Guests" value={stats?.total} icon={<Users className="w-4 h-4 text-blue-500" />} isLoading={isLoadingStats} />
+          <StatCard title="Total Orders" value={stats?.total} icon={<Users className="w-4 h-4 text-blue-500" />} isLoading={isLoadingStats} />
           <StatCard title="Completed" value={stats?.completed} icon={<UtensilsCrossed className="w-4 h-4 text-secondary" />} isLoading={isLoadingStats} />
           <StatCard title="Cancelled" value={stats?.cancelled} icon={<X className="w-4 h-4 text-destructive" />} isLoading={isLoadingStats} />
         </div>
@@ -315,10 +315,10 @@ export default function Admin() {
             <Table>
               <Header>
                 <Row>
-                  <Head>Guest</Head>
+                  <Head>Customer</Head>
                   <Head>Contact</Head>
-                  <Head>Date & Time</Head>
-                  <Head>Details</Head>
+                  <Head>Pickup Date & Slot</Head>
+                  <Head>Order Details</Head>
                   <Head>Status</Head>
                   <Head className="text-right">Actions</Head>
                 </Row>
@@ -377,7 +377,7 @@ export default function Admin() {
                       </Cell>
                       <Cell>
                         <div className="flex flex-col">
-                          <span className="text-sm">{booking.guests} Guests</span>
+                          <span className="text-sm">{booking.guests} portion{booking.guests > 1 ? "s" : ""} ({booking.guests * 250}g)</span>
                           <span className="text-xs text-muted-foreground">{booking.mealType}</span>
                           {booking.specialRequests && (
                             <span className="text-xs text-orange-600 mt-1 max-w-[150px] truncate" title={booking.specialRequests}>
