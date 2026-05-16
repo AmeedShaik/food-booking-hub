@@ -11,6 +11,7 @@
 databases:
   - name: food-booking-db
     plan: free
+    region: oregon
     databaseName: food_booking
     postgresMajorVersion: "16"
 
@@ -21,17 +22,15 @@ services:
     plan: free
     region: oregon
     branch: replit-export
-    # Activate pnpm via corepack, install all workspace deps,
-    # build both the API server (esbuild bundle) and the frontend (vite),
-    # then push the DB schema and seed default menu items.
+    # Activate pnpm via corepack, install workspace deps, build API + frontend.
+    # The DB schema push + seed run at startup time (free tier doesn't support
+    # preDeployCommand) inside scripts/start.sh.
     buildCommand: |
       corepack enable
       corepack prepare pnpm@10 --activate
       pnpm install --no-frozen-lockfile
       pnpm run build
-      pnpm --filter @workspace/db run push
-      pnpm --filter @workspace/db run seed-menu
-    startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
+    startCommand: bash ./scripts/start.sh
     healthCheckPath: /api/healthz
     autoDeploy: true
     envVars:
