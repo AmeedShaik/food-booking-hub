@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: bookings
     description: Booking operations
+  - name: menu
+    description: Menu item operations
 paths:
   /healthz:
     get:
@@ -159,6 +161,128 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
 
+  /menu-items:
+    get:
+      operationId: listMenuItems
+      tags: [menu]
+      summary: List all menu items
+      parameters:
+        - name: availableOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of menu items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MenuItem"
+    post:
+      operationId: createMenuItem
+      tags: [menu]
+      summary: Create a new menu item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMenuItemBody"
+      responses:
+        "201":
+          description: Created menu item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MenuItem"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /menu-items/{id}:
+    get:
+      operationId: getMenuItem
+      tags: [menu]
+      summary: Get a menu item by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Menu item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MenuItem"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    patch:
+      operationId: updateMenuItem
+      tags: [menu]
+      summary: Update a menu item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMenuItemBody"
+      responses:
+        "200":
+          description: Updated menu item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MenuItem"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteMenuItem
+      tags: [menu]
+      summary: Delete a menu item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
 components:
   schemas:
     HealthStatus:
@@ -279,6 +403,94 @@ components:
         - cancelled
         - completed
         - todayCount
+
+    MenuItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        pricePaise:
+          type: integer
+          description: Price in paise (1/100 of INR). e.g. 25000 = ₹250.00
+        category:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        available:
+          type: boolean
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - pricePaise
+        - category
+        - available
+        - sortOrder
+        - createdAt
+        - updatedAt
+
+    CreateMenuItemBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        pricePaise:
+          type: integer
+          minimum: 0
+        category:
+          type: string
+          minLength: 1
+        imageUrl:
+          type: string
+        available:
+          type: boolean
+        sortOrder:
+          type: integer
+          minimum: 0
+      required:
+        - name
+        - pricePaise
+        - category
+
+    UpdateMenuItemBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          nullable: true
+        pricePaise:
+          type: integer
+          minimum: 0
+        category:
+          type: string
+          minLength: 1
+        imageUrl:
+          type: string
+          nullable: true
+        available:
+          type: boolean
+        sortOrder:
+          type: integer
+          minimum: 0
 
     ApiError:
       type: object

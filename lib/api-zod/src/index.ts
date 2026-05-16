@@ -1,4 +1,5 @@
 export * from "./generated/api";
+export * from "./menu";
 export * from "./generated/types/apiError";
 export * from "./generated/types/booking";
 export * from "./generated/types/bookingStats";

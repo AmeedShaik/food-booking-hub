@@ -20,6 +20,7 @@ import {
   Link2,
   LayoutList,
   Calendar,
+  BookOpen,
 } from "lucide-react";
 import { whatsAppLink } from "@/hooks/use-whatsapp";
 import CalendarView from "@/components/CalendarView";
@@ -184,10 +185,22 @@ export default function Admin() {
               <p className="text-xs text-muted-foreground mt-1">Manage your home reservations</p>
             </div>
           </div>
-          <Link href="/" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors bg-accent/20 px-4 py-2 rounded-full">
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden md:inline">Back to Site</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/kitchen-dash/menu"
+              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors bg-accent/20 px-4 py-2 rounded-full"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span className="hidden md:inline">Menu</span>
+            </Link>
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors bg-accent/20 px-4 py-2 rounded-full"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden md:inline">Back to Site</span>
+            </Link>
+          </div>
         </div>
       </header>
 

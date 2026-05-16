@@ -5,7 +5,7 @@ import * as z from "zod";
 import { format, addDays, startOfDay } from "date-fns";
 import { CalendarIcon, Loader2, UtensilsCrossed, CheckCircle2 } from "lucide-react";
 
-import { useCreateBooking } from "@workspace/api-client-react";
+import { useCreateBooking, useListMenuItems } from "@workspace/api-client-react";
 import { useWhatsAppNumber, whatsAppLink } from "@/hooks/use-whatsapp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
-const MENU_ITEMS = ["Chicken Biryani", "Mutton Biryani", "Chicken 65"];
+const FALLBACK_MENU_ITEMS = ["Chicken Biryani", "Mutton Biryani", "Chicken 65"];
+
+const DEFAULT_PRICE_PER_PORTION = 200;
 
 const bookingSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -65,8 +67,6 @@ function isDisabledDate(date: Date) {
   return startOfDay(date) < tomorrow || !isWeekend(date);
 }
 
-const PRICE_PER_PORTION = 200;
-
 function buildPhonePeLink(amount: number, note: string) {
   const params = new URLSearchParams({
     pa: "9030921654-5@ybl",
@@ -83,6 +83,26 @@ export default function Home() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState<BookingFormValues | null>(null);
   const whatsappNumber = useWhatsAppNumber();
+
+  // Fetch the menu from the API. If the request errors or returns no items
+  // (e.g. before the admin seeds anything), fall back to a hardcoded list
+  // so the customer flow keeps working.
+  const { data: apiMenuItems } = useListMenuItems({ availableOnly: true });
+  const menuOptions = (apiMenuItems && apiMenuItems.length > 0)
+    ? apiMenuItems.map((m) => ({
+        name: m.name,
+        pricePerPortion: Math.round(m.pricePaise / 100),
+      }))
+    : FALLBACK_MENU_ITEMS.map((name) => ({
+        name,
+        pricePerPortion: DEFAULT_PRICE_PER_PORTION,
+      }));
+
+  const priceForItem = (name: string | undefined): number => {
+    if (!name) return DEFAULT_PRICE_PER_PORTION;
+    return menuOptions.find((m) => m.name === name)?.pricePerPortion
+      ?? DEFAULT_PRICE_PER_PORTION;
+  };
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
@@ -190,7 +210,8 @@ export default function Home() {
           <div className="max-w-md w-full mx-auto">
             {isSuccess && submittedOrder ? (
               (() => {
-                const total = submittedOrder.guests * PRICE_PER_PORTION;
+                const perPortion = priceForItem(submittedOrder.mealType);
+                const total = submittedOrder.guests * perPortion;
                 const advance = Math.ceil(total / 2);
                 const payLink = buildPhonePeLink(
                   advance,
@@ -408,8 +429,13 @@ export default function Home() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {MENU_ITEMS.map((item) => (
-                                  <SelectItem key={item} value={item}>{item}</SelectItem>
+                                {menuOptions.map((item) => (
+                                  <SelectItem key={item.name} value={item.name}>
+                                    {item.name}
+                                    <span className="ml-2 text-xs text-muted-foreground">
+                                      ₹{item.pricePerPortion}/portion
+                                    </span>
+                                  </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
