@@ -26,10 +26,21 @@ services:
     # The DB schema push + seed run at startup time (free tier doesn't support
     # preDeployCommand) inside scripts/start.sh.
     buildCommand: |
+      set -e
       corepack enable
       corepack prepare pnpm@10 --activate
       pnpm install --no-frozen-lockfile
-      pnpm run build
+      # Build API server and frontend directly. We deliberately skip the
+      # workspace-level "build" script because it gates everything behind
+      # `pnpm run typecheck`, which we don't need at deploy time and which
+      # adds noise to deploy failures.
+      pnpm --filter @workspace/api-server run build
+      pnpm --filter @workspace/food-booking run build
+      # Fail fast if the artifact we expect to start isn't there.
+      test -f artifacts/api-server/dist/index.mjs
+      test -f artifacts/food-booking/dist/public/index.html
+      ls -la artifacts/api-server/dist/
+      ls -la artifacts/food-booking/dist/public/
     startCommand: bash ./scripts/start.sh
     healthCheckPath: /api/healthz
     autoDeploy: true
