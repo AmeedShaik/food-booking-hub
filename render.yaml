@@ -1,0 +1,52 @@
+# Render Blueprint: provisions a Postgres database and a single Node web service
+# that serves both the Express API (under /api) and the built React app.
+#
+# To deploy:
+#   1. Push this branch to GitHub
+#   2. Go to https://dashboard.render.com/blueprints and click "New Blueprint Instance"
+#   3. Select this repo, click Apply, and Render does the rest
+#
+# Docs: https://render.com/docs/blueprint-spec
+
+databases:
+  - name: food-booking-db
+    plan: free
+    databaseName: food_booking
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: food-booking
+    runtime: node
+    plan: free
+    region: oregon
+    branch: replit-export
+    # Activate pnpm via corepack, install all workspace deps,
+    # build both the API server (esbuild bundle) and the frontend (vite),
+    # then push the DB schema and seed default menu items.
+    buildCommand: |
+      corepack enable
+      corepack prepare pnpm@10 --activate
+      pnpm install --no-frozen-lockfile
+      pnpm run build
+      pnpm --filter @workspace/db run push
+      pnpm --filter @workspace/db run seed-menu
+    startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
+    healthCheckPath: /api/healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "24"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: food-booking-db
+          property: connectionString
+      # WhatsApp + TextMeBot credentials — set these in the Render dashboard
+      # after the service is created. Leaving them unset just disables WhatsApp
+      # notifications; the rest of the app works fine.
+      - key: WHATSAPP_NUMBER
+        sync: false
+      - key: TEXTMEBOT_API_KEY
+        sync: false
